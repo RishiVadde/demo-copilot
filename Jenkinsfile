@@ -1,5 +1,5 @@
 pipeline {
-    agent any
+    agent none
     
     options {
         buildDiscarder(logRotator(numToKeepStr: '10'))
@@ -33,49 +33,80 @@ pipeline {
     }
     
     stages {
-        stage('Checkout') {
-            steps {
-                echo '📥 Checking out source code...'
-                checkout scm
-                sh 'git log --oneline -1'
+        stage('Pipeline') {
+            agent any
+            stages {
+                stage('Checkout') {
+                    steps {
+                        echo '📥 Checking out source code...'
+                        checkout scm
+                        sh 'git log --oneline -1'
+                    }
+                }
+                
+                stage('Build') {
+                    steps {
+                        echo '🔨 Building Java Maven project...'
+                        sh '''
+                            mvn clean package \
+                                -DskipTests \
+                                -Drevision=${BUILD_NUMBER} \
+                                -Dchangelist= \
+                                -Dsha1=
+                        '''
+                    }
+                }
+                
+                stage('Test') {
+                    steps {
+                        echo '✅ Running unit tests...'
+                        sh 'mvn test -Dsurefire.rerunFailingTestsCount=2'
+                    }
+                }
+                
+                stage('Code Quality') {
+                    when {
+                        branch 'main'
+                    }
+                    steps {
+                        echo '🔍 Analyzing code quality (SonarQube)...'
+                        sh '''
+                            mvn sonar:sonar \
+                                -Dsonar.projectKey=simple-app \
+                                -Dsonar.sources=src/main/java \
+                                -Dsonar.host.url=${SONARQUBE_HOST_URL} \
+                                -Dsonar.login=${SONARQUBE_TOKEN} || echo "SonarQube analysis skipped"
+                        '''
+                    }
+                }
+            }
+            post {
+                always {
+                    echo '🧹 Cleaning up...'
+                    junit '**/target/surefire-reports/TEST-*.xml', allowEmptyResults: true
+                    archiveArtifacts artifacts: 'target/**/*.jar', allowEmptyArchive: true
+                }
+                success {
+                    echo '✅ Pipeline succeeded!'
+                    sh '''
+                        echo "Build Summary:"
+                        echo "- Build Number: ${BUILD_NUMBER}"
+                        echo "- Git Commit: ${GIT_COMMIT}"
+                    '''
+                }
+                failure {
+                    echo '❌ Pipeline failed!'
+                    sh 'echo "Check logs for details"'
+                }
+                unstable {
+                    echo '⚠️ Pipeline is unstable!'
+                }
+                cleanup {
+                    deleteDir()
+                }
             }
         }
-        
-        stage('Build') {
-            steps {
-                echo '🔨 Building Java Maven project...'
-                sh '''
-                    mvn clean package \
-                        -DskipTests \
-                        -Drevision=${BUILD_NUMBER} \
-                        -Dchangelist= \
-                        -Dsha1=
-                '''
-            }
-        }
-        
-        stage('Test') {
-            steps {
-                echo '✅ Running unit tests...'
-                sh 'mvn test -Dsurefire.rerunFailingTestsCount=2'
-            }
-        }
-        
-        stage('Code Quality') {
-            when {
-                branch 'main'
-            }
-            steps {
-                echo '🔍 Analyzing code quality (SonarQube)...'
-                sh '''
-                    mvn sonar:sonar \
-                        -Dsonar.projectKey=simple-app \
-                        -Dsonar.sources=src/main/java \
-                        -Dsonar.host.url=${SONARQUBE_HOST_URL} \
-                        -Dsonar.login=${SONARQUBE_TOKEN} || echo "SonarQube analysis skipped"
-                '''
-            }
-        }
+    }
         
         // stage('Build Docker Image') - COMMENTED OUT (uncomment when Docker credentials are available)
         // stage('Build Docker Image') {
@@ -149,52 +180,5 @@ pipeline {
         // }
         
         // stage('Deploy to Prod') - COMMENTED OUT (uncomment when Docker credentials are available)
-        // stage('Deploy to Prod') {
-        //     when {
-        //         tag "v*"
-        //     }
-        //     input {
-        //         message "Deploy to Production?"
-        //         ok "Deploy"
-        //     }
-        //     steps {
-        //         echo '🌍 Deploying to Production environment...'
-        //         sh '''
-        //             echo "Production deployment steps:"
-        //             echo "1. Blue-Green deployment check"
-        //             echo "2. Health checks"
-        //             echo "3. Rollback plan verification"
-        //             echo "Placeholder - configure for your infrastructure"
-        //         '''
-        //     }
-        // }
-    }
-    
-    post {
-        always {
-            echo '🧹 Cleaning up...'
-            // sh 'docker image prune -f || true'  // COMMENTED OUT - Docker not available
-            junit '**/target/surefire-reports/TEST-*.xml'
-            archiveArtifacts artifacts: 'target/**/*.jar', allowEmptyArchive: true
-        }
-        success {
-            echo '✅ Pipeline succeeded!'
-            sh '''
-                echo "Build Summary:"
-                echo "- Build Number: ${BUILD_NUMBER}"
-                echo "- Git Commit: ${GIT_COMMIT}"
-                echo "- Image: ${IMAGE_NAME}:${IMAGE_TAG}"
-            '''
-        }
-        failure {
-            echo '❌ Pipeline failed!'
-            sh 'echo "Check logs for details"'
-        }
-        unstable {
-            echo '⚠️ Pipeline is unstable!'
-        }
-        cleanup {
-            deleteDir()
-        }
     }
 }

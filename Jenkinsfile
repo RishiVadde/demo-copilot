@@ -22,8 +22,8 @@ pipeline {
     // }
     
     environment {
-        MAVEN_HOME = tool 'Maven-3.9.10'
-        JAVA_HOME = tool 'Java-11'
+        MAVEN_HOME = tool 'Maven'
+        JAVA_HOME = tool 'JDK'
         PATH = "${MAVEN_HOME}/bin:${JAVA_HOME}/bin:${PATH}"
         // DOCKER ENVIRONMENT - COMMENTED OUT (uncomment when Docker credentials are available)
         // DOCKER_REGISTRY_URL = "${params.DOCKER_REGISTRY}"
@@ -172,29 +172,37 @@ pipeline {
     
     post {
         always {
-            echo '🧹 Cleaning up...'
-            // sh 'docker image prune -f || true'  // COMMENTED OUT - Docker not available
-            junit '**/target/surefire-reports/TEST-*.xml'
-            archiveArtifacts artifacts: 'target/**/*.jar', allowEmptyArchive: true
+            node {
+                echo '🧹 Cleaning up...'
+                // sh 'docker image prune -f || true'  // COMMENTED OUT - Docker not available
+                junit '**/target/surefire-reports/TEST-*.xml'
+                archiveArtifacts artifacts: 'target/**/*.jar', allowEmptyArchive: true
+            }
         }
         success {
-            echo '✅ Pipeline succeeded!'
-            sh '''
-                echo "Build Summary:"
-                echo "- Build Number: ${BUILD_NUMBER}"
-                echo "- Git Commit: ${GIT_COMMIT}"
-                echo "- Image: ${IMAGE_NAME}:${IMAGE_TAG}"
-            '''
+            node {
+                echo '✅ Pipeline succeeded!'
+                sh '''
+                    echo "Build Summary:"
+                    echo "- Build Number: ${BUILD_NUMBER}"
+                    echo "- Git Commit: ${GIT_COMMIT}"
+                    echo "- Image: ${IMAGE_NAME}:${IMAGE_TAG}"
+                '''
+            }
         }
         failure {
-            echo '❌ Pipeline failed!'
-            sh 'echo "Check logs for details"'
+            node {
+                echo '❌ Pipeline failed!'
+                sh 'echo "Check logs for details"'
+            }
         }
         unstable {
             echo '⚠️ Pipeline is unstable!'
         }
         cleanup {
-            deleteDir()
+            node {
+                deleteDir()
+            }
         }
     }
 }

@@ -83,7 +83,7 @@ pipeline {
             post {
                 always {
                     echo '🧹 Cleaning up...'
-                    junit '**/target/surefire-reports/TEST-*.xml', allowEmptyResults: true
+                    junit testResults: '**/target/surefire-reports/TEST-*.xml', allowEmptyResults: true
                     archiveArtifacts artifacts: 'target/**/*.jar', allowEmptyArchive: true
                 }
                 success {

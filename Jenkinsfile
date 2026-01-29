@@ -172,7 +172,7 @@ pipeline {
     
     post {
         always {
-            node {
+            node('any') {
                 echo '🧹 Cleaning up...'
                 // sh 'docker image prune -f || true'  // COMMENTED OUT - Docker not available
                 junit '**/target/surefire-reports/TEST-*.xml'
@@ -180,7 +180,7 @@ pipeline {
             }
         }
         success {
-            node {
+            node('any') {
                 echo '✅ Pipeline succeeded!'
                 sh '''
                     echo "Build Summary:"
@@ -191,7 +191,7 @@ pipeline {
             }
         }
         failure {
-            node {
+            node('any') {
                 echo '❌ Pipeline failed!'
                 sh 'echo "Check logs for details"'
             }
@@ -200,7 +200,7 @@ pipeline {
             echo '⚠️ Pipeline is unstable!'
         }
         cleanup {
-            node {
+            node('any') {
                 deleteDir()
             }
         }

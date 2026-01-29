@@ -47,7 +47,9 @@ pipeline {
                                 -DskipTests \
                                 -Drevision=${BUILD_NUMBER} \
                                 -Dchangelist= \
-                                -Dsha1=
+                                -Dsha1= \
+                                -T 1C \
+                                -q
                         '''
                     }
                 }

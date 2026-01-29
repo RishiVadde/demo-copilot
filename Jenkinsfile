@@ -21,20 +21,15 @@ pipeline {
     //     )
     // }
     
-    environment {
-        MAVEN_HOME = tool 'Maven'
-        JAVA_HOME = tool 'JDK'
-        PATH = "${MAVEN_HOME}/bin:${JAVA_HOME}/bin:${PATH}"
-        // DOCKER ENVIRONMENT - COMMENTED OUT (uncomment when Docker credentials are available)
-        // DOCKER_REGISTRY_URL = "${params.DOCKER_REGISTRY}"
-        // IMAGE_NAME = "${DOCKER_REGISTRY_URL}/simple-app"
-        // IMAGE_TAG = "${params.IMAGE_TAG}"
-        // REGISTRY_CREDENTIALS = credentials('docker-registry-credentials')
-    }
     
     stages {
         stage('Pipeline') {
             agent any
+            environment {
+                MAVEN_HOME = tool 'Maven'
+                JAVA_HOME = tool 'JDK'
+                PATH = "${MAVEN_HOME}/bin:${JAVA_HOME}/bin:${PATH}"
+            }
             stages {
                 stage('Checkout') {
                     steps {

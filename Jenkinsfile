@@ -172,37 +172,29 @@ pipeline {
     
     post {
         always {
-            node('any') {
-                echo '🧹 Cleaning up...'
-                // sh 'docker image prune -f || true'  // COMMENTED OUT - Docker not available
-                junit '**/target/surefire-reports/TEST-*.xml'
-                archiveArtifacts artifacts: 'target/**/*.jar', allowEmptyArchive: true
-            }
+            echo '🧹 Cleaning up...'
+            // sh 'docker image prune -f || true'  // COMMENTED OUT - Docker not available
+            junit '**/target/surefire-reports/TEST-*.xml'
+            archiveArtifacts artifacts: 'target/**/*.jar', allowEmptyArchive: true
         }
         success {
-            node('any') {
-                echo '✅ Pipeline succeeded!'
-                sh '''
-                    echo "Build Summary:"
-                    echo "- Build Number: ${BUILD_NUMBER}"
-                    echo "- Git Commit: ${GIT_COMMIT}"
-                    echo "- Image: ${IMAGE_NAME}:${IMAGE_TAG}"
-                '''
-            }
+            echo '✅ Pipeline succeeded!'
+            sh '''
+                echo "Build Summary:"
+                echo "- Build Number: ${BUILD_NUMBER}"
+                echo "- Git Commit: ${GIT_COMMIT}"
+                echo "- Image: ${IMAGE_NAME}:${IMAGE_TAG}"
+            '''
         }
         failure {
-            node('any') {
-                echo '❌ Pipeline failed!'
-                sh 'echo "Check logs for details"'
-            }
+            echo '❌ Pipeline failed!'
+            sh 'echo "Check logs for details"'
         }
         unstable {
             echo '⚠️ Pipeline is unstable!'
         }
         cleanup {
-            node('any') {
-                deleteDir()
-            }
+            deleteDir()
         }
     }
 }

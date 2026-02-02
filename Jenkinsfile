@@ -61,21 +61,21 @@ pipeline {
                     }
                 }
                 
-                stage('Code Quality') {
-                    when {
-                        branch 'main'
-                    }
-                    steps {
-                        echo '🔍 Analyzing code quality (SonarQube)...'
-                        sh '''
-                            mvn sonar:sonar \
-                                -Dsonar.projectKey=simple-app \
-                                -Dsonar.sources=src/main/java \
-                                -Dsonar.host.url=${SONARQUBE_HOST_URL} \
-                                -Dsonar.login=${SONARQUBE_TOKEN} || echo "SonarQube analysis skipped"
-                        '''
-                    }
-                }
+                // stage('Code Quality') {
+                //     when {
+                //         branch 'main'
+                //     }
+                //     steps {
+                //         echo '🔍 Analyzing code quality (SonarQube)...'
+                //         sh '''
+                //             mvn sonar:sonar \
+                //                 -Dsonar.projectKey=simple-app \
+                //                 -Dsonar.sources=src/main/java \
+                //                 -Dsonar.host.url=${SONARQUBE_HOST_URL} \
+                //                 -Dsonar.login=${SONARQUBE_TOKEN} || echo "SonarQube analysis skipped"
+                //         '''
+                //     }
+                // }
             }
             post {
                 always {

@@ -1,6 +1,11 @@
 pipeline {
     agent any
     
+    tools {
+        maven 'Maven'
+        jdk 'JDK'
+    }
+    
     options {
         timeout(time: 30, unit: 'MINUTES')
     }

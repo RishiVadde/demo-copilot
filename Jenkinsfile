@@ -1,107 +1,25 @@
 pipeline {
-    agent none
+    agent any
     
     options {
-        buildDiscarder(logRotator(numToKeepStr: '10'))
-        timestamps()
-        timeout(time: 1, unit: 'HOURS')
+        timeout(time: 30, unit: 'MINUTES')
     }
     
-    // DOCKER PARAMETERS - COMMENTED OUT (uncomment when Docker credentials are available)
-    // parameters {
-    //     string(
-    //         name: 'DOCKER_REGISTRY',
-    //         defaultValue: 'private-registry.example.com',
-    //         description: 'Private Docker registry URL'
-    //     )
-    //     string(
-    //         name: 'IMAGE_TAG',
-    //         defaultValue: 'latest',
-    //         description: 'Docker image tag (e.g., latest, 1.0.0, ${BUILD_NUMBER})'
-    //     )
-    // }
-    
-    
     stages {
-        stage('Pipeline') {
-            agent any
-            environment {
-                MAVEN_HOME = tool 'Maven'
-                JAVA_HOME = tool 'JDK'
-                PATH = "${MAVEN_HOME}/bin:${JAVA_HOME}/bin:${PATH}"
+        stage('Build') {
+            steps {
+                echo '🔨 Building...'
+                sh 'mvn clean install'
             }
-            stages {
-                stage('Checkout') {
-                    steps {
-                        echo '📥 Checking out source code...'
-                        checkout scm
-                        sh 'git log --oneline -1'
-                    }
-                }
-                
-                stage('Build') {
-                    steps {
-                        echo '🔨 Building Java Maven project...'
-                        sh '''
-                            mvn clean package \
-                                -DskipTests \
-                                -Drevision=${BUILD_NUMBER} \
-                                -Dchangelist= \
-                                -Dsha1= \
-                                -T 1C \
-                                -q
-                        '''
-                    }
-                }
-                
-                stage('Test') {
-                    steps {
-                        echo '✅ Running unit tests...'
-                        sh 'mvn test -Dsurefire.rerunFailingTestsCount=2'
-                    }
-                }
-                
-                // stage('Code Quality') {
-                //     when {
-                //         branch 'main'
-                //     }
-                //     steps {
-                //         echo '🔍 Analyzing code quality (SonarQube)...'
-                //         sh '''
-                //             mvn sonar:sonar \
-                //                 -Dsonar.projectKey=simple-app \
-                //                 -Dsonar.sources=src/main/java \
-                //                 -Dsonar.host.url=${SONARQUBE_HOST_URL} \
-                //                 -Dsonar.login=${SONARQUBE_TOKEN} || echo "SonarQube analysis skipped"
-                //         '''
-                //     }
-                // }
-            }
-            post {
-                always {
-                    echo '🧹 Cleaning up...'
-                    junit testResults: '**/target/surefire-reports/TEST-*.xml', allowEmptyResults: true
-                    archiveArtifacts artifacts: 'target/**/*.jar', allowEmptyArchive: true
-                }
-                success {
-                    echo '✅ Pipeline succeeded!'
-                    sh '''
-                        echo "Build Summary:"
-                        echo "- Build Number: ${BUILD_NUMBER}"
-                        echo "- Git Commit: ${GIT_COMMIT}"
-                    '''
-                }
-                failure {
-                    echo '❌ Pipeline failed!'
-                    sh 'echo "Check logs for details"'
-                }
-                unstable {
-                    echo '⚠️ Pipeline is unstable!'
-                }
-                cleanup {
-                    deleteDir()
-                }
-            }
+        }
+    }
+    
+    post {
+        success {
+            echo '✅ Build succeeded!'
+        }
+        failure {
+            echo '❌ Build failed!'
         }
     }
 }
